@@ -1,6 +1,10 @@
+"use client";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function Home() {
+  const [orderedProduct, setOrderedProduct] = useState<string | null>(null);
+
   const products = [
     {
       id: 1,
@@ -21,6 +25,11 @@ export default function Home() {
       image: "/product_mug_1782553132400.png",
     },
   ];
+
+  const handleOrder = (e: React.MouseEvent, productName: string) => {
+    e.preventDefault();
+    setOrderedProduct(productName);
+  };
 
   return (
     <div className="flex flex-col w-full">
@@ -45,14 +54,14 @@ export default function Home() {
       <section id="products" className="py-24 px-6 mx-auto w-full max-w-7xl">
         <div className="flex justify-between items-end mb-16 border-b-2 border-black pb-4">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase">Featured</h2>
-          <a href="#" className="hidden md:block text-sm font-bold uppercase tracking-widest hover:underline underline-offset-4">
-            View All
-          </a>
+          <p className="hidden md:block text-sm font-bold uppercase tracking-widest">
+            Click an item to order
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {products.map((product) => (
-            <a key={product.id} href="#" className="group flex flex-col gap-6">
+            <div key={product.id} className="group flex flex-col gap-6 cursor-pointer" onClick={(e) => handleOrder(e, product.name)}>
               <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100">
                 <Image
                   src={product.image}
@@ -66,10 +75,26 @@ export default function Home() {
                 <h3>{product.name}</h3>
                 <span>{product.price}</span>
               </div>
-            </a>
+            </div>
           ))}
         </div>
       </section>
+
+      {/* Order Confirmation Modal */}
+      {orderedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm p-6">
+          <div className="bg-black text-white p-12 max-w-lg w-full flex flex-col items-center text-center shadow-2xl border border-white">
+            <h3 className="text-2xl font-bold tracking-tighter uppercase mb-4">Order Confirmed</h3>
+            <p className="mb-8 font-medium">Your order for <span className="font-bold border-b border-white pb-1">{orderedProduct}</span> has been successfully placed.</p>
+            <button 
+              onClick={() => setOrderedProduct(null)}
+              className="border-2 border-white bg-white text-black px-8 py-3 font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
