@@ -26,9 +26,35 @@ export default function Home() {
     },
   ];
 
-  const handleOrder = (e: React.MouseEvent, productName: string) => {
+  const [isOrdering, setIsOrdering] = useState(false);
+
+  const handleOrder = async (e: React.MouseEvent, product: any) => {
     e.preventDefault();
-    setOrderedProduct(productName);
+    setIsOrdering(true);
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName: product.name,
+          price: product.price,
+        }),
+      });
+
+      if (response.ok) {
+        setOrderedProduct(product.name);
+      } else {
+        alert("There was an error placing your order.");
+      }
+    } catch (error) {
+      console.error("Error ordering:", error);
+      alert("There was an error placing your order.");
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   return (
@@ -61,7 +87,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {products.map((product) => (
-            <div key={product.id} className="group flex flex-col gap-6 cursor-pointer" onClick={(e) => handleOrder(e, product.name)}>
+            <div key={product.id} className="group flex flex-col gap-6 cursor-pointer" onClick={(e) => handleOrder(e, product)}>
               <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100">
                 <Image
                   src={product.image}
