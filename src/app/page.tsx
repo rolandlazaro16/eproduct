@@ -88,8 +88,8 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {products.map((product) => (
-            <div key={product.id} className="group flex flex-col gap-6 cursor-pointer" onClick={(e) => handleOrder(e, product)}>
-              <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100">
+            <div key={product.id} className="group flex flex-col gap-6">
+              <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100 cursor-pointer" onClick={(e) => handleOrder(e, product)}>
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -98,9 +98,18 @@ export default function Home() {
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
               </div>
-              <div className="flex justify-between items-start font-bold uppercase tracking-widest text-sm">
-                <h3>{product.name}</h3>
-                <span>{product.price}</span>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-start font-bold uppercase tracking-widest text-sm">
+                  <h3>{product.name}</h3>
+                  <span>{product.price}</span>
+                </div>
+                <button 
+                  onClick={(e) => handleOrder(e, product)}
+                  disabled={isOrdering}
+                  className="w-full border-2 border-black bg-white text-black py-3 font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isOrdering ? 'Processing...' : 'Order Now'}
+                </button>
               </div>
             </div>
           ))}
