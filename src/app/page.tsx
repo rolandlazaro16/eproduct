@@ -1,35 +1,35 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  
   const [orderedProduct, setOrderedProduct] = useState<string | null>(null);
-
-  const products = [
-    {
-      id: 1,
-      name: "Minimalist Headphones",
-      price: "$299",
-      image: "/product_headphones_1782553061327.png",
-    },
-    {
-      id: 2,
-      name: "Modern Timepiece",
-      price: "$199",
-      image: "/product_watch_1782553101043.png",
-    },
-    {
-      id: 3,
-      name: "Essential Mug",
-      price: "$29",
-      image: "/product_mug_1782553132400.png",
-    },
-  ];
-
+  const [selectedProductForPurchase, setSelectedProductForPurchase] = useState<any | null>(null);
   const [isOrdering, setIsOrdering] = useState(false);
 
-  const handleOrder = async (e: React.MouseEvent, product: any) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://eproduct.onrender.com';
+        const res = await fetch(`${API_URL}/api/products`);
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data.products);
+        }
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const handleOrder = async () => {
+    if (!selectedProductForPurchase) return;
     setIsOrdering(true);
 
     try {
@@ -40,13 +40,14 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          productName: product.name,
-          price: product.price,
+          productName: selectedProductForPurchase.name,
+          price: selectedProductForPurchase.price,
         }),
       });
 
       if (response.ok) {
-        setOrderedProduct(product.name);
+        setOrderedProduct(selectedProductForPurchase.name);
+        setSelectedProductForPurchase(null);
       } else {
         alert("There was an error placing your order.");
       }
@@ -86,35 +87,70 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {products.map((product) => (
-            <div key={product.id} className="group flex flex-col gap-6">
-              <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100 cursor-pointer" onClick={(e) => handleOrder(e, product)}>
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-              </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-start font-bold uppercase tracking-widest text-sm">
-                  <h3>{product.name}</h3>
-                  <span>{product.price}</span>
+        {isLoadingProducts ? (
+          <div className="text-center py-12 font-bold uppercase tracking-widest">Loading products...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {products.map((product) => (
+              <div key={product._id} className="group flex flex-col gap-6">
+                <div className="relative aspect-square w-full overflow-hidden border border-black bg-neutral-100 cursor-pointer" onClick={() => setSelectedProductForPurchase(product)}>
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
                 </div>
-                <button 
-                  onClick={(e) => handleOrder(e, product)}
-                  disabled={isOrdering}
-                  className="w-full border-2 border-black bg-white text-black py-3 font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isOrdering ? 'Processing...' : 'Order Now'}
-                </button>
+                <div className="flex flex-col gap-4">
+                  <div className="flex justify-between items-start font-bold uppercase tracking-widest text-sm">
+                    <h3>{product.name}</h3>
+                    <span>{product.price}</span>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedProductForPurchase(product)}
+                    className="w-full border-2 border-black bg-white text-black py-3 font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white"
+                  >
+                    Order Now
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* Purchase Dialog */}
+      {selectedProductForPurchase && !orderedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm p-6">
+          <div className="bg-white text-black p-8 md:p-12 max-w-lg w-full flex flex-col items-center text-center shadow-2xl border-2 border-black">
+            <h3 className="text-2xl font-bold tracking-tighter uppercase mb-2">Confirm Purchase</h3>
+            <p className="mb-6 font-medium text-neutral-600">Are you sure you want to purchase this item?</p>
+            
+            <div className="flex flex-col items-center gap-2 mb-8 bg-neutral-100 w-full p-4 border border-neutral-200">
+              <span className="font-bold uppercase tracking-widest">{selectedProductForPurchase.name}</span>
+              <span className="font-medium">{selectedProductForPurchase.price}</span>
+            </div>
+
+            <div className="flex gap-4 w-full">
+              <button 
+                onClick={() => setSelectedProductForPurchase(null)}
+                disabled={isOrdering}
+                className="flex-1 border-2 border-black bg-white text-black py-3 font-bold uppercase tracking-widest transition-colors hover:bg-neutral-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleOrder}
+                disabled={isOrdering}
+                className="flex-1 border-2 border-black bg-black text-white py-3 font-bold uppercase tracking-widest transition-colors hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {isOrdering ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Confirmation Modal */}
       {orderedProduct && (
